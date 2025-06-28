@@ -1,7 +1,10 @@
 from django.core.exceptions import ValidationError
 from rest_framework import status
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from .models import MountainPass
 from .serializers import MountainPassSerializer
 from .database import DatabaseManager
 
@@ -23,7 +26,6 @@ class SubmitDataView(APIView):
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class UpdatePassStatusView(APIView):
     def patch(self, request, pass_id):
         new_status = request.data.get('status')
@@ -32,3 +34,12 @@ class UpdatePassStatusView(APIView):
             return Response({"new_status": updated_pass.status}, status=200)
         except ValidationError as e:
             return Response({"error": str(e)}, status=400)
+
+class MountainPassDetail(RetrieveAPIView):
+    queryset = MountainPass.objects.all()
+    serializer_class = MountainPassSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
