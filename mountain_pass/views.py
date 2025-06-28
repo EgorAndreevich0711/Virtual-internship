@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -43,3 +43,29 @@ class MountainPassDetail(RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+
+class MountainPassUpdate(UpdateAPIView):
+    queryset = MountainPass.objects.all()
+    serializer_class = MountainPassSerializer
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'new':
+            return Response(
+                {"state": 0, "message": "Редактирование запрещено: статус не 'new'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        protected_fields = ['email', 'phone', 'fam', 'name', 'otc']
+        for field in protected_fields:
+            if field in request.data.get('user', {}):
+                return Response(
+                    {"state": 0, "message": f"Запрещено изменять поле: {field}"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"state": 1, "message": "Успешно обновлено"})
