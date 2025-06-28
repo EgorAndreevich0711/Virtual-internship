@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -69,3 +69,13 @@ class MountainPassUpdate(UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"state": 1, "message": "Успешно обновлено"})
+
+
+class UserMountainPassList(ListAPIView):
+    serializer_class = MountainPassSerializer
+
+    def get_queryset(self):
+        email = self.request.query_params.get('user__email')
+        if not email:
+            return MountainPass.objects.none()
+        return MountainPass.objects.filter(user__email=email)
