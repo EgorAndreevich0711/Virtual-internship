@@ -4,5 +4,5 @@ from .views import SubmitDataView,  UserMountainPassList, MountainPassDetailUpda
 urlpatterns = [
     path('submitData/', SubmitDataView.as_view(), name='submit-data'),
     path('submitData/<int:pk>/', MountainPassDetailUpdate.as_view(), name='mountainpass-detail-update'),
-    path('submitData/', UserMountainPassList.as_view(), name='mountainpass-user-list'),
+    path('submitData/list', UserMountainPassList.as_view(), name='mountainpass-user-list'),
 ]
