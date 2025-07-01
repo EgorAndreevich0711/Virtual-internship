@@ -62,6 +62,17 @@ class MountainPass(models.Model):
     def __str__(self):
         return self.title
 
+    def fix_encoding(self):
+        """Метод для исправления некорректных данных"""
+        fields_to_check = ['title', 'beauty_title', 'other_titles', 'connect']
+        for field in fields_to_check:
+            current_value = getattr(self, field)
+            if isinstance(current_value, str) and '???' in current_value:
+                print(f"\nОбъект ID {self.id}, поле '{field}':")
+                print(f"Текущее значение: {current_value}")
+                new_value = input("Введите правильное значение: ")
+                setattr(self, field, new_value)
+        self.save()
 
 class Image(models.Model):
     mountain_pass = models.ForeignKey(MountainPass, related_name='images', on_delete=models.CASCADE)
