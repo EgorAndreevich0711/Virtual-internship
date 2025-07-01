@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView, UpdateAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -35,40 +35,52 @@ class UpdatePassStatusView(APIView):
         except ValidationError as e:
             return Response({"error": str(e)}, status=400)
 
-class MountainPassDetail(RetrieveAPIView):
+
+class MountainPassDetailUpdate(RetrieveUpdateAPIView):
     queryset = MountainPass.objects.all()
     serializer_class = MountainPassSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        """Обработка GET-запросов"""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-
-class MountainPassUpdate(UpdateAPIView):
-    queryset = MountainPass.objects.all()
-    serializer_class = MountainPassSerializer
-
     def patch(self, request, *args, **kwargs):
+        """Обработка PATCH-запросов"""
         instance = self.get_object()
+
+        # Проверка статуса
         if instance.status != 'new':
             return Response(
                 {"state": 0, "message": "Редактирование запрещено: статус не 'new'"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Проверка защищенных полей
         protected_fields = ['email', 'phone', 'fam', 'name', 'otc']
+        user_data = request.data.get('user', {})
+
         for field in protected_fields:
-            if field in request.data.get('user', {}):
+            if field in user_data:
                 return Response(
                     {"state": 0, "message": f"Запрещено изменять поле: {field}"},
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"state": 1, "message": "Успешно обновлено"})
+
+        return Response({
+            "state": 1,
+            "message": "Успешно обновлено",
+            "data": serializer.data
+        })
 
 
 class UserMountainPassList(ListAPIView):
